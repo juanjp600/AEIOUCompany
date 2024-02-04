@@ -67,7 +67,32 @@ public class Patches
         {
             var nextSpeech = pendingSpeech[0];
             pendingSpeech.RemoveAt(0);
-            currentSpeechTask = Task.Run(() => TTS.SpeakToMemory(nextSpeech.PlayerId, nextSpeech.ChatMessage, 7.5f));
+
+            var playerId = nextSpeech.PlayerId;
+            PlayerControllerB player = __instance.playersManager.allPlayerScripts[playerId];
+            if (player == null)
+            {
+                return;
+            }
+
+            var applicablePermissions = PermissionConfiguration.CurrentSettings.DefaultPermissions;
+            if (PermissionConfiguration.CurrentSettings.PermissionsPerSteamId.TryGetValue(
+                    player.playerSteamId,
+                    out var playerSpecificPermissions))
+            {
+                applicablePermissions = playerSpecificPermissions;
+            }
+
+            if (!applicablePermissions.HasFlag(PermissionConfiguration.Permissions.UseTts)) { return; }
+
+            string chatMsg = nextSpeech.ChatMessage;
+            if (!applicablePermissions.HasFlag(PermissionConfiguration.Permissions.UseInlineCommands))
+            {
+                chatMsg = PostProcess.FilterOutInlineCommands(chatMsg);
+            }
+            chatMsg = PostProcess.FilterOutXml(chatMsg);
+
+            currentSpeechTask = Task.Run(() => TTS.SpeakToMemory(nextSpeech.PlayerId, chatMsg, 7.5f));
         }
     }
 

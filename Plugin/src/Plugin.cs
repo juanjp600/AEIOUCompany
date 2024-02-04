@@ -1,15 +1,8 @@
-﻿using System;
-using System.Diagnostics;
-using System.IO;
-using System.IO.Pipes;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
-using TMPro;
-using UnityEngine;
 
 namespace AEIOU_Company
 {
@@ -46,6 +39,45 @@ namespace AEIOU_Company
             ChatSize = Config.Bind<int>("Advanced", "Chat Character Limit", 1024, "WARNING: Everybody must have the same value set for this!").Value;
             EnableDeadChat = Config.Bind<bool>("General", "Enable Dead Chat", true, "Enables chatting after dead").Value;
             BlacklistPrefix = Config.Bind<string>("General", "Blacklist Prefix", "/", "TTS Ignores messages starting with this").Value;
+
+            PermissionConfiguration.CurrentSettings.DefaultPermissions = Config.Bind<PermissionConfiguration.Permissions>(
+                    section: "Permissions",
+                    key: "DefaultPermissions",
+                    defaultValue: PermissionConfiguration.Permissions.None,
+                    description: "Default permissions.")
+                .Value;
+
+            IEnumerable<ulong> stringToSteamIds(string str)
+            {
+                foreach (var value in str.Split(','))
+                {
+                    if (ulong.TryParse(value, out var steamId))
+                    {
+                        yield return steamId;
+                    }
+                }
+            }
+
+            var steamIdsThatCanUseTts = stringToSteamIds(Config.Bind<string>(
+                    section: "Permissions",
+                    key: "CanUseTts",
+                    defaultValue: "",
+                    description: "Comma-separated list of SteamIDs of players that can use TTS.")
+                .Value).ToArray();
+            var steamIdsThatCanUseInlineCommands = stringToSteamIds(Config.Bind<string>(
+                    section: "Permissions",
+                    key: "CanUseInlineCommands",
+                    defaultValue: "",
+                    description: "Comma-separated list of SteamIDs of players that can use inline commands.")
+                .Value).ToArray();
+            foreach (var steamId in steamIdsThatCanUseTts)
+            {
+                PermissionConfiguration.CurrentSettings.PermissionsPerSteamId[steamId] = PermissionConfiguration.Permissions.UseTts;
+            }
+            foreach (var steamId in steamIdsThatCanUseInlineCommands)
+            {
+                PermissionConfiguration.CurrentSettings.PermissionsPerSteamId[steamId] = PermissionConfiguration.Permissions.UseInlineCommands;
+            }
 
             TTS.Init();
             base.Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");

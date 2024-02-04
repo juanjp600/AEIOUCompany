@@ -5,6 +5,7 @@ using System.IO.Pipes;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using GameNetcodeStuff;
 
 namespace AEIOU_Company;
 static class TTS
@@ -15,16 +16,18 @@ static class TTS
         public readonly float[] AudioData;
         public readonly float AudioLengthInSeconds;
 
-        public SpeechData(int playerPlayerId, float[] audioData, float audioLengthInSeconds)
+        public SpeechData(int playerId, float[] audioData, float audioLengthInSeconds)
         {
-            PlayerId = playerPlayerId;
+            PlayerId = playerId;
             AudioData = audioData;
             AudioLengthInSeconds = audioLengthInSeconds;
         }
     }
 
     private const int OUT_BUFFER_SIZE = 8192; // text
-    public const int IN_BUFFER_SIZE = 8388608; // 8MB pcm audio
+    public const int MAX_BUFFER_SECONDS = 30;
+    public const int IN_BUFFER_SIZE = MAX_BUFFER_SECONDS * FREQUENCY_HZ;
+    public const int FREQUENCY_HZ = 11025;
 
     private static readonly float[] audioFloatBuffer = new float[IN_BUFFER_SIZE];
     private static byte[] audioByteBuffer = new byte[IN_BUFFER_SIZE * 2];
@@ -92,7 +95,7 @@ static class TTS
             if (nextSample != 0f) { lastNonZeroValueIndex = i; }
         }
 
-        var currentAudioLengthInSeconds = (float)lastNonZeroValueIndex / (float)11025; // 11025 hz
+        var currentAudioLengthInSeconds = (float)lastNonZeroValueIndex / (float)FREQUENCY_HZ;
 
         Plugin.Log($"END");
         return new SpeechData(playerId, audioFloatBuffer, currentAudioLengthInSeconds);
