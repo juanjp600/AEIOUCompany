@@ -58,6 +58,12 @@ namespace AEIOU_Company
                 }
             }
 
+            var steamIdsThatCannotUseTts = stringToSteamIds(Config.Bind<string>(
+                    section: "Permissions",
+                    key: "BlockedFromUsingTts",
+                    defaultValue: "",
+                    description: "Comma-separated list of SteamIDs of players that are not allowed to use TTS.")
+                .Value).ToArray();
             var steamIdsThatCanUseTts = stringToSteamIds(Config.Bind<string>(
                     section: "Permissions",
                     key: "CanUseTts",
@@ -77,6 +83,10 @@ namespace AEIOU_Company
             foreach (var steamId in steamIdsThatCanUseInlineCommands)
             {
                 PermissionConfiguration.CurrentSettings.PermissionsPerSteamId[steamId] = PermissionConfiguration.Permissions.UseInlineCommands;
+            }
+            foreach (var steamId in steamIdsThatCannotUseTts)
+            {
+                PermissionConfiguration.CurrentSettings.PermissionsPerSteamId[steamId] = PermissionConfiguration.Permissions.None;
             }
 
             TTS.Init();
