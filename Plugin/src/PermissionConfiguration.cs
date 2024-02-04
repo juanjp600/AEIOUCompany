@@ -9,7 +9,7 @@ static class PermissionConfiguration
     {
         None = 0,
         UseTts = 1 << 0,
-        UseInlineCommands = UseTts | 1 << 1
+        UseInlineCommands = UseTts | (1 << 1)
     }
 
     public struct Settings
